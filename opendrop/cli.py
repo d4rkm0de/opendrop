@@ -120,6 +120,11 @@ class AirDropCli:
         logger.info("Looking for receivers. Press Ctrl+C to stop ...")
         self.browser = AirDropBrowser(self.config)
         self.browser.start(callback_add=self._found_receiver)
+        
+        # Initial dump to file
+        with open(self.config.discovery_report, "w") as f:
+                json.dump(self.discover, f)
+        
         try:
             threading.Event().wait()
         except KeyboardInterrupt:
@@ -127,8 +132,7 @@ class AirDropCli:
         finally:
             self.browser.stop()
             logger.debug(f"Save discovery results to {self.config.discovery_report}")
-            with open(self.config.discovery_report, "w") as f:
-                json.dump(self.discover, f)
+
 
     def _found_receiver(self, info):
         thread = threading.Thread(target=self._send_discover, args=(info,))
@@ -173,6 +177,11 @@ class AirDropCli:
         self.discover.append(node_info)
         if discoverable:
             logger.info(f"Found  index {index}  ID {identifier}  name {receiver_name}")
+            
+            # Dump (append) to JSON the moment it is found
+            with open(self.config.discovery_report, "a") as f:
+                json.dump(node_info, f)
+                
         else:
             logger.debug(f"Receiver ID {identifier} is not discoverable")
         self.lock.release()
